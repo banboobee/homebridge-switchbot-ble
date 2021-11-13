@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. This project uses [Semantic Versioning](https://semver.org/)
 
+## [Version 2.0.0](https://github.com/OpenWonderLabs/homebridge-switchbot-ble/releases/tag/v2.0.0) (2021-11-13)
+
+### Changes
+
+- This plugin is deprciated and will no longer receive updates.
+- Pleas switch to [homebridge-switchbot](https://github.com/OpenWonderLabs/homebridge-switchbot), the new switchbot plugin.
+
 ## [Version 1.6.1](https://github.com/OpenWonderLabs/homebridge-switchbot-ble/releases/tag/v1.6.1) (2021-08-29)
 
 ### Changes
