@@ -10,6 +10,7 @@ import { Curtain } from "./curtain-accessory";
 import { Meter } from "./meter-accessory";
 import { MqttClient } from "mqtt";
 import { connectAsync } from "async-mqtt";
+import fakegato from 'fakegato-history';
 
 const PLATFORM_NAME = "SwitchBotPlatform";
 
@@ -47,13 +48,16 @@ export = (api: API) => {
 class SwitchBotPlatform implements StaticPlatformPlugin {
   private readonly log: Logging;
   private readonly config: PlatformConfig;
-
+  private readonly history: any;
+  
   constructor(log: Logging, config: PlatformConfig, api: API) {
     this.log = log;
 
     // probably parse config or something here
     this.config = config;
 
+    this.history = fakegato(api);
+    
     log.info("SwitchBot platform finished initializing!");
   }
 
@@ -67,12 +71,12 @@ class SwitchBotPlatform implements StaticPlatformPlugin {
     if (this.config.mqttURL) {
       try {
 	mqtt = await connectAsync(this.config.mqttURL);
-	this.log(`MQTT connection has been established successfully.`)
+	this.log.info(`MQTT connection has been established successfully.`)
 	mqtt.on('error', (e: Error) => {
-	  this.log(`Failed to publish MQTT messages. ${e}`)
+	  this.log.error(`Failed to publish MQTT messages. ${e}`)
 	});
       } catch (e) {
-	this.log(`Failed to establish MQTT connection. ${e}`)
+	this.log.error(`Failed to establish MQTT connection. ${e}`)
       }
     }
 
@@ -99,7 +103,7 @@ class SwitchBotPlatform implements StaticPlatformPlugin {
               scanDuration, reverseDir, moveTime, device.scanInterval || 60000, device.openCloseThreshold || 5));
             break; 
           case "meter":
-          deviceList.push(new Meter(hap, mqtt, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
+          deviceList.push(new Meter(hap, mqtt, this.history, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
             break;
           case "motion":
             deviceList.push(new Motion(hap, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));

@@ -26,19 +26,20 @@ export class Meter implements AccessoryPlugin {
   // This property must be existent!!
   name: string;
 
-  private readonly temperatureSercice: Service;
+  private readonly temperatureService: Service;
   private readonly humidityService: Service;
   private readonly informationService: Service;
+  private readonly historyService: any;
 
-  constructor(hap: HAP, mqtt: MqttClient, log: Logging, name: string, bleMac: string, scanDuration: number, scanInterval: number) {
+  constructor(hap: HAP, mqtt: MqttClient, history: any, log: Logging, name: string, bleMac: string, scanDuration: number, scanInterval: number) {
     this.log = log;
     this.name = name;
     this.bleMac = bleMac;
     this.scanDuration = scanDuration;
     this.scanInterval = scanInterval;
 
-    this.temperatureSercice = new hap.Service.TemperatureSensor(name);
-    this.temperatureSercice
+    this.temperatureService = new hap.Service.TemperatureSensor(name);
+    this.temperatureService
       .getCharacteristic(hap.Characteristic.CurrentTemperature)
       .on(CharacteristicEventTypes.GET, (callback: CharacteristicGetCallback) => {
         //log.info(name + " current temperature: " + this.temperature + "\u2103");
@@ -68,6 +69,8 @@ export class Meter implements AccessoryPlugin {
 
     log.info(name, "scanDuration:" + this.scanDuration.toString() + "ms", "scanInterval:" + this.scanInterval.toString() + "ms");
 
+    this.historyService = new history('room', this, {log: this.log, storage: 'fs'});
+
     const Switchbot = require("node-switchbot");
     const switchbot = new Switchbot();
 
@@ -80,6 +83,10 @@ export class Meter implements AccessoryPlugin {
       mqtt.publish(`homebridge-switchbot-ble/${this.bleMac}`,
 		   `{temperture:${this.temperature},humidity:${this.humidity},battery:${ad.serviceData.battery}}`
 		  );
+      this.historyService.addEntry(
+	{time: Math.round(new Date().valueOf()/1000),
+	 temp: this.temperature,
+	 humidity: this.humidity});
     };
 
     switchbot
@@ -129,6 +136,9 @@ export class Meter implements AccessoryPlugin {
    * It should return all services which should be added to the accessory.
    */
   getServices(): Service[] {
-    return [this.informationService, this.temperatureSercice, this.humidityService];
+    return [this.informationService,
+	    this.temperatureService,
+	    this.humidityService,
+	    this.historyService];
   }
 }
