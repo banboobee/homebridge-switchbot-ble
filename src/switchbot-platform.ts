@@ -8,6 +8,8 @@ import { Contact } from "./contact-accessory";
 import { Motion } from "./motion-accessory";
 import { Curtain } from "./curtain-accessory";
 import { Meter } from "./meter-accessory";
+import { MqttClient } from "mqtt";
+import { connectAsync } from "async-mqtt";
 
 const PLATFORM_NAME = "SwitchBotPlatform";
 
@@ -34,6 +36,7 @@ const PLATFORM_NAME = "SwitchBotPlatform";
  * like this for example and used to access all exported variables and classes from HAP-NodeJS.
  */
 let hap: HAP;
+let mqtt: MqttClient;
 
 export = (api: API) => {
   hap = api.hap;
@@ -60,7 +63,19 @@ class SwitchBotPlatform implements StaticPlatformPlugin {
    * it will delay the bridge startup though, so keep it to a minimum.
    * The set of exposed accessories CANNOT change over the lifetime of the plugin!
    */
-  accessories(callback: (foundAccessories: AccessoryPlugin[]) => void): void {
+  async accessories(callback: (foundAccessories: AccessoryPlugin[]) => void): Promise<void> {
+    if (this.config.mqttURL) {
+      try {
+	mqtt = await connectAsync(this.config.mqttURL);
+	this.log(`MQTT connection has been established successfully.`)
+	mqtt.on('error', (e: Error) => {
+	  this.log(`Failed to publish MQTT messages. ${e}`)
+	});
+      } catch (e) {
+	this.log(`Failed to establish MQTT connection. ${e}`)
+      }
+    }
+
     let deviceList = [];
     if (this.config.devices) {
       for (var device of this.config.devices) {
@@ -84,7 +99,7 @@ class SwitchBotPlatform implements StaticPlatformPlugin {
               scanDuration, reverseDir, moveTime, device.scanInterval || 60000, device.openCloseThreshold || 5));
             break; 
           case "meter":
-            deviceList.push(new Meter(hap, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
+          deviceList.push(new Meter(hap, mqtt, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
             break;
           case "motion":
             deviceList.push(new Motion(hap, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));

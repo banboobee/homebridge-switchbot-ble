@@ -10,6 +10,9 @@ import {
   Service,
   CharacteristicEventTypes,
 } from "homebridge";
+import {
+  MqttClient
+} from "mqtt";
 
 export class Meter implements AccessoryPlugin {
   private readonly log: Logging;
@@ -27,7 +30,7 @@ export class Meter implements AccessoryPlugin {
   private readonly humidityService: Service;
   private readonly informationService: Service;
 
-  constructor(hap: HAP, log: Logging, name: string, bleMac: string, scanDuration: number, scanInterval: number) {
+  constructor(hap: HAP, mqtt: MqttClient, log: Logging, name: string, bleMac: string, scanDuration: number, scanInterval: number) {
     this.log = log;
     this.name = name;
     this.bleMac = bleMac;
@@ -38,7 +41,7 @@ export class Meter implements AccessoryPlugin {
     this.temperatureSercice
       .getCharacteristic(hap.Characteristic.CurrentTemperature)
       .on(CharacteristicEventTypes.GET, (callback: CharacteristicGetCallback) => {
-        log.info(name + " current temperature: " + this.temperature + "\u2103");
+        //log.info(name + " current temperature: " + this.temperature + "\u2103");
         callback(undefined, this.temperature < 0 ? 0 : this.temperature > 100 ? 100 : this.temperature);
       })
       .on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
@@ -50,7 +53,7 @@ export class Meter implements AccessoryPlugin {
     this.humidityService
       .getCharacteristic(hap.Characteristic.CurrentRelativeHumidity)
       .on(CharacteristicEventTypes.GET, (callback: CharacteristicGetCallback) => {
-        log.info(name + " current humidity: " + this.humidity + "%");
+        //log.info(name + " current humidity: " + this.humidity + "%");
         callback(undefined, this.humidity);
       })
       .on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
@@ -74,6 +77,9 @@ export class Meter implements AccessoryPlugin {
       // log.info("Humidity:", ad.serviceData.humidity);
       this.temperature = ad.serviceData.temperature.c;
       this.humidity = ad.serviceData.humidity;
+      mqtt.publish(`homebridge-switchbot-ble/${this.bleMac}`,
+		   `{temperture:${this.temperature},humidity:${this.humidity},battery:${ad.serviceData.battery}}`
+		  );
     };
 
     switchbot
