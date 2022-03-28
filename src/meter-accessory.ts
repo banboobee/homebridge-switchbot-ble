@@ -13,6 +13,7 @@ import {
 import {
   MqttClient
 } from "mqtt";
+import { hostname } from "os";
 
 export class Meter implements AccessoryPlugin {
   private readonly log: Logging;
@@ -69,7 +70,10 @@ export class Meter implements AccessoryPlugin {
 
     log.info(name, "scanDuration:" + this.scanDuration.toString() + "ms", "scanInterval:" + this.scanInterval.toString() + "ms");
 
-    this.historyService = new history('room', this, {log: this.log, storage: 'fs'});
+    this.historyService = new history('room', this,
+      {log: this.log, storage: 'fs',
+       filename: `${hostname().split(".")[0]}_${this.bleMac.replace(' ','-')}_persist.json`
+      });
 
     const Switchbot = require("node-switchbot");
     const switchbot = new Switchbot();
@@ -81,7 +85,7 @@ export class Meter implements AccessoryPlugin {
       this.temperature = ad.serviceData.temperature.c;
       this.humidity = ad.serviceData.humidity;
       mqtt.publish(`homebridge-switchbot-ble/${this.bleMac}`,
-		   `{temperture:${this.temperature},humidity:${this.humidity},battery:${ad.serviceData.battery}}`
+		   `{"temperture":${this.temperature},"humidity":${this.humidity},"battery":${ad.serviceData.battery}}`
 		  );
       this.historyService.addEntry(
 	{time: Math.round(new Date().valueOf()/1000),
