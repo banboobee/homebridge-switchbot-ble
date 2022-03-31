@@ -13,7 +13,6 @@ import {
 import {
   MqttClient
 } from "mqtt";
-import { hostname } from "os";
 
 export class Meter implements AccessoryPlugin {
   private readonly log: Logging;
@@ -70,10 +69,7 @@ export class Meter implements AccessoryPlugin {
 
     log.info(name, "scanDuration:" + this.scanDuration.toString() + "ms", "scanInterval:" + this.scanInterval.toString() + "ms");
 
-    this.historyService = new history('room', this,
-      {log: this.log, storage: 'fs',
-       filename: `${hostname().split(".")[0]}_${this.bleMac.replace(' ','-')}_persist.json`
-      });
+    this.historyService = new history('room', this, {log: this.log, storage: 'fs', displayName: `${this.bleMac}`});
 
     const Switchbot = require("node-switchbot");
     const switchbot = new Switchbot();
