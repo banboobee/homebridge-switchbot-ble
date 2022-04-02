@@ -13,6 +13,7 @@ import {
 import {
   MqttClient
 } from "mqtt";
+import { hostname } from "os";
 
 export class Meter implements AccessoryPlugin {
   private readonly log: Logging;
@@ -43,7 +44,8 @@ export class Meter implements AccessoryPlugin {
       .getCharacteristic(hap.Characteristic.CurrentTemperature)
       .on(CharacteristicEventTypes.GET, (callback: CharacteristicGetCallback) => {
         //log.info(name + " current temperature: " + this.temperature + "\u2103");
-        callback(undefined, this.temperature < 0 ? 0 : this.temperature > 100 ? 100 : this.temperature);
+        //callback(undefined, this.temperature < 0 ? 0 : this.temperature > 100 ? 100 : this.temperature);
+        callback(undefined, this.temperature);
       })
       .on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
         log.info("The temperature of the Meter can't be set!");
@@ -69,8 +71,12 @@ export class Meter implements AccessoryPlugin {
 
     log.info(name, "scanDuration:" + this.scanDuration.toString() + "ms", "scanInterval:" + this.scanInterval.toString() + "ms");
 
-    this.historyService = new history('room', this, {log: this.log, storage: 'fs', displayName: `${this.bleMac}`});
-
+    //this.historyService = new history('room', this, {log: this.log, storage: 'fs', displayName: `${this.bleMac}`});
+    this.historyService = new history('room', this,
+				      {log: this.log, storage: 'fs',
+				       filename: `${hostname().split(".")[0]}_${this.bleMac}_persist.json`
+				      });
+    
     const Switchbot = require("node-switchbot");
     const switchbot = new Switchbot();
 
@@ -78,15 +84,20 @@ export class Meter implements AccessoryPlugin {
       // log.info(JSON.stringify(ad, null, '  '));
       // log.info("Temperature:", ad.serviceData.temperature.c);
       // log.info("Humidity:", ad.serviceData.humidity);
-      this.temperature = ad.serviceData.temperature.c;
-      this.humidity = ad.serviceData.humidity;
-      mqtt.publish(`homebridge-switchbot-ble/${this.bleMac}`,
-		   `{"temperture":${this.temperature},"humidity":${this.humidity},"battery":${ad.serviceData.battery}}`
-		  );
-      this.historyService.addEntry(
-	{time: Math.round(new Date().valueOf()/1000),
-	 temp: this.temperature,
-	 humidity: this.humidity});
+      // log.info(this.bleMac, "Temperature:", ad.serviceData.temperature.c, "Humidity:", ad.serviceData.humidity);
+      if (ad.serviceData.humidity > 0) {
+	this.temperature = ad.serviceData.temperature.c;
+	this.humidity = ad.serviceData.humidity;
+	mqtt.publish(`homebridge-switchbot-ble/${this.bleMac}`,
+		     `{"temperture":${this.temperature},"humidity":${this.humidity},"battery":${ad.serviceData.battery}}`
+		    );
+	this.historyService.addEntry(
+	  {time: Math.round(new Date().valueOf()/1000),
+	   temp: this.temperature,
+	   humidity: this.humidity});
+      } else {
+	log.error(`Unreliable measurement values of ${this.bleMac}. Temperature:${ad.serviceData.temperature.c} Humidity:${ad.serviceData.humidity}`);
+      }
     };
 
     switchbot
