@@ -70,7 +70,7 @@ class SwitchBotPlatform implements StaticPlatformPlugin {
   async accessories(callback: (foundAccessories: AccessoryPlugin[]) => void): Promise<void> {
     if (this.config.mqttURL) {
       try {
-	mqtt = await connectAsync(this.config.mqttURL);
+	mqtt = await connectAsync(this.config.mqttURL, this.config.mqttOptions || {});
 	this.log.info(`MQTT connection has been established successfully.`)
 	mqtt.on('error', (e: Error) => {
 	  this.log.error(`Failed to publish MQTT messages. ${e}`)
@@ -103,7 +103,7 @@ class SwitchBotPlatform implements StaticPlatformPlugin {
               scanDuration, reverseDir, moveTime, device.scanInterval || 60000, device.openCloseThreshold || 5));
             break; 
           case "meter":
-          deviceList.push(new Meter(hap, mqtt, this.history, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
+          deviceList.push(new Meter(hap, mqtt, this.history, this.config, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
             break;
           case "motion":
             deviceList.push(new Motion(hap, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));

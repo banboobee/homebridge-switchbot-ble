@@ -9,6 +9,7 @@ import {
   Logging,
   Service,
   CharacteristicEventTypes,
+  PlatformConfig
 } from "homebridge";
 import {
   MqttClient
@@ -32,7 +33,7 @@ export class Meter implements AccessoryPlugin {
   private readonly informationService: Service;
   private readonly historyService: any;
 
-  constructor(hap: HAP, mqtt: MqttClient, history: any, log: Logging, name: string, bleMac: string, scanDuration: number, scanInterval: number) {
+  constructor(hap: HAP, mqtt: MqttClient, history: any, config: PlatformConfig, log: Logging, name: string, bleMac: string, scanDuration: number, scanInterval: number) {
     this.log = log;
     this.name = name;
     this.bleMac = bleMac;
@@ -89,7 +90,8 @@ export class Meter implements AccessoryPlugin {
 	this.temperature = ad.serviceData.temperature.c;
 	this.humidity = ad.serviceData.humidity;
 	mqtt.publish(`homebridge-switchbot-ble/${this.bleMac}`,
-		     `{"temperture":${this.temperature},"humidity":${this.humidity},"battery":${ad.serviceData.battery}}`
+		     `{"temperture":${this.temperature},"humidity":${this.humidity},"battery":${ad.serviceData.battery}}`,
+		     config.mqttPubOptions || {}
 		    );
 	this.historyService.addEntry(
 	  {time: Math.round(new Date().valueOf()/1000),
