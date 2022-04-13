@@ -89,7 +89,7 @@ export class Meter implements AccessoryPlugin {
       if (ad.serviceData.humidity > 0) {
 	this.temperature = ad.serviceData.temperature.c;
 	this.humidity = ad.serviceData.humidity;
-	mqtt.publish(`homebridge-switchbot-ble/${this.bleMac}`,
+	mqtt?.publish(`homebridge-switchbot-ble/${this.bleMac}`,
 		     `{"temperture":${this.temperature},"humidity":${this.humidity},"battery":${ad.serviceData.battery}}`,
 		     config.mqttPubOptions || {}
 		    );
