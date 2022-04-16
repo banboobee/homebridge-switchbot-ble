@@ -103,7 +103,7 @@ class SwitchBotPlatform implements StaticPlatformPlugin {
               scanDuration, reverseDir, moveTime, device.scanInterval || 60000, device.openCloseThreshold || 5));
             break; 
           case "meter":
-          deviceList.push(new Meter(hap, mqtt, this.history, this.config, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
+          deviceList.push(new Meter(hap, mqtt, device.history === true ? this.history : null, this.config, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));
             break;
           case "motion":
             deviceList.push(new Motion(hap, this.log, device.name, device.bleMac.toLowerCase(), scanDuration, scanInterval));

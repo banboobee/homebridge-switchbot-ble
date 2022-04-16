@@ -73,10 +73,12 @@ export class Meter implements AccessoryPlugin {
     log.info(name, "scanDuration:" + this.scanDuration.toString() + "ms", "scanInterval:" + this.scanInterval.toString() + "ms");
 
     //this.historyService = new history('room', this, {log: this.log, storage: 'fs', displayName: `${this.bleMac}`});
-    this.historyService = new history('room', this,
-				      {log: this.log, storage: 'fs',
-				       filename: `${hostname().split(".")[0]}_${this.bleMac}_persist.json`
-				      });
+    this.historyService = history ? 
+      new history('room', this,
+		  {log: this.log, storage: 'fs',
+		   filename: `${hostname().split(".")[0]}_${this.bleMac}_persist.json`
+		  }) :
+      null;
     
     const Switchbot = require("node-switchbot");
     const switchbot = new Switchbot();
@@ -93,7 +95,7 @@ export class Meter implements AccessoryPlugin {
 		     `{"temperature":${this.temperature},"humidity":${this.humidity},"battery":${ad.serviceData.battery}}`,
 		     config.mqttPubOptions || {}
 		    );
-	this.historyService.addEntry(
+	this.historyService?.addEntry(
 	  {time: Math.round(new Date().valueOf()/1000),
 	   temp: this.temperature,
 	   humidity: this.humidity});
@@ -149,9 +151,13 @@ export class Meter implements AccessoryPlugin {
    * It should return all services which should be added to the accessory.
    */
   getServices(): Service[] {
-    return [this.informationService,
-	    this.temperatureService,
-	    this.humidityService,
-	    this.historyService];
+    return this.historyService ? 
+      [this.informationService,
+       this.temperatureService,
+       this.humidityService,
+       this.historyService] :
+      [this.informationService,
+       this.temperatureService,
+       this.humidityService];
   }
 }
